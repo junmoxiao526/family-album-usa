@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>走遍美国 · 口语跟读</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">FA</div>
+    <div class="brand-text">
+      <div class="brand-title">走遍美国 <em>Family Album, U.S.A.</em></div>
+      <div class="brand-sub" id="epLabel">第 01 集 · 节选片段</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button class="btn" id="pickerBtn" hidden>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span id="pickerBtnText">选集</span>
+    </button>
+    <label class="btn">
+      <input type="file" id="videoInput" accept="video/*" hidden>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="M15.5 10.5 21.5 7v10l-6-3.5"/></svg>
+      导入视频
+    </label>
+    <label class="btn">
+      <input type="file" id="subInput" accept=".srt,.vtt,.txt" hidden>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 11h16M4 16h9"/></svg>
+      导入字幕
+    </label>
+    <div class="stat"><b id="doneCount">0</b><span id="totalCount">/ 0</span> 句已跟读</div>
+  </div>
+</header>
+
+<main class="stage" id="stage">
+
+  <section class="player-col">
+    <div class="video-wrap" id="videoWrap">
+      <video id="video" playsinline preload="auto"></video>
+
+      <div class="placeholder" id="placeholder">
+        <div class="ph-icon">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <p>把《走遍美国》的视频拖进来，或点右上角「导入视频」</p>
+        <small>没有视频也能练：朗读模式会逐句北美音朗读，配合跟读录音一样好用</small>
+      </div>
+
+      <div class="caption" id="caption">
+        <div class="cap-en" id="capEn"></div>
+        <div class="cap-zh" id="capZh"></div>
+      </div>
+
+      <button class="expand-lines" id="expandBtn" hidden>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+        台词
+      </button>
+    </div>
+
+    <div class="controls">
+      <div class="progress" id="progress">
+        <div class="progress-marks" id="progressMarks"></div>
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-handle" id="progressHandle"></div>
+      </div>
+      <div class="ctrl-row">
+        <div class="group">
+          <button class="icon-btn" id="recBtn" title="跟读录音 / 停止 (R)"></button>
+          <button class="icon-btn" id="prevBtn" title="上一集 ( [ )" disabled></button>
+          <button class="icon-btn play" id="playBtn" title="播放 / 暂停 (空格)"></button>
+          <button class="icon-btn" id="nextBtn" title="下一集 ( ] )" disabled></button>
+          <button class="icon-btn" id="loopBtn" title="单句循环 (L)"></button>
+        </div>
+        <div class="group">
+          <span class="time" id="timeLabel">00:00 / 00:00</span>
+          <div class="speed">
+            <button class="icon-btn tiny" id="speedDown" title="减速">−</button>
+            <span id="speedLabel">1.0×</span>
+            <button class="icon-btn tiny" id="speedUp" title="加速">+</button>
+          </div>
+          <button class="icon-btn active" id="ccBtn" title="画面上显示字幕 开/关 (V)"></button>
+          <button class="icon-btn" id="ttsBtn" title="朗读当前句 (S)"></button>
+          <button class="icon-btn" id="abBtn" title="原声 / 我的录音 对比" disabled></button>
+          <button class="icon-btn" id="fullBtn" title="全屏"></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="lines-col">
+    <div class="lines-head">
+      <div class="lh-row">
+        <h2>逐句台词</h2>
+        <span class="mode-tag" id="modeTag">朗读模式</span>
+        <button class="collapse-btn" id="collapseBtn" title="收起台词栏 (H)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+      <input type="text" id="searchInput" placeholder="搜索英文或中文…" autocomplete="off" spellcheck="false">
+      <div class="lh-tools">
+        <div class="seg" id="zhSeg" role="group" aria-label="字幕语言">
+          <button class="seg-btn active" data-mode="both">中英</button>
+          <button class="seg-btn" data-mode="en">英</button>
+          <button class="seg-btn" data-mode="zh">中</button>
+        </div>
+        <button class="chip" id="filterUndone">只看未跟读</button>
+        <button class="chip" id="clearDone">清空进度</button>
+      </div>
+    </div>
+    <div class="lines" id="linesList"></div>
+    <div class="lines-foot">空格 播放 · ↑↓ 句 · [] 集 · R 跟读 · L 循环 · S 朗读 · V 字幕</div>
+  </aside>
+
+</main>
+
+<div class="picker" id="picker" hidden>
+  <div class="picker-panel">
+    <div class="picker-head">
+      <b>选集</b>
+      <span class="picker-count" id="pickerCount"></span>
+      <input type="text" id="pickerSearch" placeholder="搜索课程名…" autocomplete="off" spellcheck="false">
+      <button class="picker-close" id="pickerClose" title="关闭 (Esc)">✕</button>
+    </div>
+    <div class="picker-body" id="pickerBody"></div>
+    <div class="picker-foot">
+      <button class="btn" id="prevEp">← 上一集</button>
+      <span class="picker-now" id="pickerNow"></span>
+      <button class="btn" id="nextEp">下一集 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/episode.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
