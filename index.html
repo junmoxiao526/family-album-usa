@@ -45,8 +45,9 @@
         <div class="ph-icon">
           <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </div>
-        <p>把《走遍美国》的视频拖进来，或点右上角「导入视频」</p>
-        <small>没有视频也能练：朗读模式会逐句北美音朗读，配合跟读录音一样好用</small>
+        <p id="phText">把《走遍美国》的视频拖进来，或点右上角「导入视频」</p>
+        <small id="phSub">没有视频也能练：朗读模式会逐句北美音朗读，配合跟读录音一样好用</small>
+        <button class="ph-btn" id="setMediaBtn" hidden>设置视频源</button>
       </div>
 
       <div class="caption" id="caption">
@@ -129,6 +130,18 @@
       <button class="btn" id="prevEp">← 上一集</button>
       <span class="picker-now" id="pickerNow"></span>
       <button class="btn" id="nextEp">下一集 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="media-dialog" id="mediaDialog" hidden>
+  <div class="media-box">
+    <h3>视频源地址</h3>
+    <p>填视频所在的公网目录地址，末尾要有斜杠。视频文件名必须和这份清单里的一致。</p>
+    <input type="text" id="mediaInput" placeholder="https://pub-xxxx.r2.dev/" autocomplete="off" spellcheck="false">
+    <div class="media-actions">
+      <button class="btn" id="mediaCancel">取消</button>
+      <button class="btn primary" id="mediaSave">保存</button>
     </div>
   </div>
 </div>

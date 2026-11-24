@@ -42,6 +42,7 @@
     zhMode: 'both',     // both | en | zh
     showCaption: true,  // 是否在画面上叠字幕
     showLines: true,    // 右侧台词栏是否展开
+    mediaOverride: '',  // 用户手动设置的视频源地址（覆盖清单里的 mediaBase）
     filterUndone: false,
     query: '',
     done: {},           // 当前集 idx -> true
@@ -67,6 +68,13 @@
     video: $('video'),
     videoWrap: $('videoWrap'),
     placeholder: $('placeholder'),
+    phText: $('phText'),
+    phSub: $('phSub'),
+    setMediaBtn: $('setMediaBtn'),
+    mediaDialog: $('mediaDialog'),
+    mediaInput: $('mediaInput'),
+    mediaCancel: $('mediaCancel'),
+    mediaSave: $('mediaSave'),
     caption: $('caption'),
     capEn: $('capEn'),
     capZh: $('capZh'),
@@ -155,7 +163,8 @@
       persistEp();
       localStorage.setItem(LS_KEY, JSON.stringify({
         allDone: S.allDone, speed: S.speed, zhMode: S.zhMode,
-        showCaption: S.showCaption, showLines: S.showLines, epNo: S.epNo
+        showCaption: S.showCaption, showLines: S.showLines,
+        mediaOverride: S.mediaOverride, epNo: S.epNo
       }));
     } catch (e) { /* ignore */ }
   }
@@ -172,6 +181,7 @@
       }
       if (typeof d.showCaption === 'boolean') S.showCaption = d.showCaption;
       if (typeof d.showLines === 'boolean') S.showLines = d.showLines;
+      if (typeof d.mediaOverride === 'string') S.mediaOverride = d.mediaOverride;
       if (typeof d.epNo === 'number') S.epNo = d.epNo;
     } catch (e) { /* ignore */ }
   }
@@ -903,6 +913,22 @@
   var SUBS = null;          // {集号: srt 原文}
   var subsLoading = null;
 
+  function mediaBase() {
+    if (S.mediaOverride) return S.mediaOverride;
+    if (LIB && LIB.mediaBase) return LIB.mediaBase;
+    return (LIB && LIB.root) || '';
+  }
+
+  function openMediaDialog() {
+    el.mediaInput.value = S.mediaOverride || (LIB && LIB.mediaBase) || '';
+    el.mediaDialog.hidden = false;
+    try { el.mediaInput.focus(); } catch (e) { /* ignore */ }
+  }
+
+  function closeMediaDialog() {
+    el.mediaDialog.hidden = true;
+  }
+
   function ensureSubs() {
     if (SUBS) return Promise.resolve(SUBS);
     if (subsLoading) return subsLoading;
@@ -1026,9 +1052,22 @@
     S.recs = S.allRecs[no];
 
     S.lines = [];
-    var vBase = LIB.mediaBase || LIB.root || '';
+    var vBase = mediaBase();
     var sBase = LIB.root || '';
-    loadVideoSrc(vBase + encodeURIComponent(ep.video), false);
+
+    if (vBase) {
+      el.setMediaBtn.hidden = true;
+      loadVideoSrc(vBase + encodeURIComponent(ep.video), false);
+    } else {
+      // 没有视频源：视频区给个提示，字幕照常加载
+      S.hasVideo = false;
+      el.video.removeAttribute('src');
+      try { el.video.load(); } catch (e) { /* ignore */ }
+      el.placeholder.classList.remove('hide');
+      el.phText.textContent = '这一集的视频还没配置';
+      el.phSub.textContent = '点下面的按钮填一个视频源地址，或用右上角「导入视频」选本地文件';
+      el.setMediaBtn.hidden = false;
+    }
 
     el.epLabel.textContent = '第 ' + pad2(no) + ' 集 · ' + ep.title + ' ACT ' + ep.act;
     el.modeTag.textContent = '剧集跟读';
@@ -1165,6 +1204,28 @@
   el.zhSeg.addEventListener('click', function (e) {
     var btn = e.target.closest('.seg-btn');
     if (btn) setZhMode(btn.dataset.mode);
+  });
+
+  el.setMediaBtn.addEventListener('click', openMediaDialog);
+  el.mediaCancel.addEventListener('click', closeMediaDialog);
+  el.mediaDialog.addEventListener('click', function (e) {
+    if (e.target === el.mediaDialog) closeMediaDialog();
+  });
+  el.mediaInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') el.mediaSave.click();
+  });
+  el.mediaSave.addEventListener('click', function () {
+    var v = el.mediaInput.value.trim();
+    if (v && !/^https?:\/\//i.test(v)) {
+      toast('地址要以 http:// 或 https:// 开头');
+      return;
+    }
+    if (v && !/\/$/.test(v)) v += '/';
+    S.mediaOverride = v;
+    save();
+    closeMediaDialog();
+    if (LIB && S.epNo != null) loadEpisode(S.epNo);
+    toast(v ? '视频源已保存' : '视频源已清空');
   });
 
   el.collapseBtn.addEventListener('click', function () { setLinesVisible(false); });
@@ -1334,6 +1395,7 @@
     el.video.addEventListener('timeupdate', syncToVideo);
     el.video.addEventListener('seeked', syncToVideo);
     el.video.addEventListener('error', function () {
+      if (!el.video.getAttribute('src')) return;   // 主动清空 src 时不算错误
       toast('这个视频浏览器解不了，换 H.264 编码的 mp4 试试');
     });
     el.video.addEventListener('play', updatePlayIcon);
