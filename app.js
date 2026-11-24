@@ -932,23 +932,36 @@
   function ensureSubs() {
     if (SUBS) return Promise.resolve(SUBS);
     if (subsLoading) return subsLoading;
+
     if (!LIB || !LIB.subtitlesInline) {
       SUBS = {};
       return Promise.resolve(SUBS);
     }
-    subsLoading = fetch('data/subtitles.json', { cache: 'force-cache' })
-      .then(function (r) {
-        if (!r.ok) throw new Error('http ' + r.status);
-        return r.json();
-      })
-      .then(function (j) {
-        SUBS = j || {};
-        return SUBS;
-      })
-      .catch(function () {
+
+    // 用 <script> 载入字幕包而不是 fetch：
+    // 字幕放在对象存储上时是跨域的，fetch 需要对方配 CORS，script 不需要。
+    subsLoading = new Promise(function (resolve) {
+      if (window.__FAUSA_SUBS__) {
+        SUBS = window.__FAUSA_SUBS__;
+        resolve(SUBS);
+        return;
+      }
+
+      var url = LIB.subtitlesUrl || 'data/subtitles.js';
+      var s = document.createElement('script');
+      s.src = url;
+      s.async = true;
+      s.onload = function () {
+        SUBS = window.__FAUSA_SUBS__ || {};
+        resolve(SUBS);
+      };
+      s.onerror = function () {
         SUBS = {};
-        return SUBS;
-      });
+        resolve(SUBS);
+      };
+      document.head.appendChild(s);
+    });
+
     return subsLoading;
   }
 
