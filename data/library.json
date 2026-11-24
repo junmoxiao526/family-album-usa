@@ -1,7 +1,7 @@
 {
  "title": "走遍美国 Family Album, U.S.A.",
- "root": "",
- "mediaBase": "",
+ "root": "/media/fausa/",
+ "mediaBase": "https://jade-1468156370.cos.ap-shanghai.myqcloud.com/",
  "subtitlesInline": true,
  "count": 78,
  "lessons": [
